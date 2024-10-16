@@ -1,14 +1,29 @@
 const express = require('express');
 const app = express();
 
-app.use((req, res, next) => {
+//Ajout
+app.use(express.json()); //indique à Express d'intercepter toutes les requêtes qui ont comme Content-Type "application/json" 
+//et met à disposition leur body directement sur l'objet req 
+//Le package "body-parser" est une ancienne façon de faire équivalante (rendre les données du body de req exploitables)
+
+app.use((req, res, next) => { 
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content, Accept, Content-Type, Authorization');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
     next();
 });
 
-app.use('/api/stuff', (req, res) => {
+//Ajout :
+app.post('/api/stuff', (req, res) => {
+    console.log(req.body); //Log le body de la requete (au content-type "application/json") dans la console (qui execute le server)
+    res.status(201).json({ //201 est le code de création de ressource
+        message: 'Objet créé !'
+    });
+});
+
+app.use('/api/stuff', (req, res) => {//La méthode .use permet d'intercepter toutes les requêtes (non spécifique) à la route indiquée, 
+//on peut spécifier le verbe de requête à la place pour n'intercepter que celles-ci. 
+//Les requêtes interceptées pour une même route par un middleware en amout, ne le seront pas par celles qui aurait pu le faire en aval.
     const stuff = [
         {
             _id: 'oeihFzeoi',
