@@ -1,7 +1,14 @@
 const express = require('express');
 const app = express();
 
-//Ajout
+//Ajout :
+const mongoose = require('mongoose');
+mongoose.connect('mongodb+srv://ribeirosimon:W9SKchHjawMJWVc7@cluster0.yeur4.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0',
+    { useNewUrlParser: true,
+        useUnifiedTopology: true })
+    .then(() => console.log('Connexion à MongoDB réussie !'))
+    .catch(() => console.log('Connexion à MongoDB échouée !'));
+
 app.use(express.json()); //indique à Express d'intercepter toutes les requêtes qui ont comme Content-Type "application/json" 
 //et met à disposition leur body directement sur l'objet req 
 //Le package "body-parser" est une ancienne façon de faire équivalante (rendre les données du body de req exploitables)
@@ -13,7 +20,6 @@ app.use((req, res, next) => {
     next();
 });
 
-//Ajout :
 app.post('/api/stuff', (req, res) => {
     console.log(req.body); //Log le body de la requete (au content-type "application/json") dans la console (qui execute le server)
     res.status(201).json({ //201 est le code de création de ressource
