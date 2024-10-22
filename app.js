@@ -1,8 +1,6 @@
 const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
-
-//Ajout :
 const Thing = require('./models/Thing')
 
 mongoose.connect('mongodb+srv://ribeirosimon:<PASSWORD>@cluster0.yeur4.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0',
@@ -31,6 +29,19 @@ app.post('/api/stuff', (req, res) => { //contenu modifié pour enregistrer les n
 });
 
 //Ajout :
+app.put('/api/stuff/:id', (req, res) => {
+    Thing.updateOne({_id: req.params.id}, {...req.body, _id:req.params.id})
+        .then(() => res.status(200).json({message: 'Objet mis à jour !'}))
+        .catch(error => res.status(400).json({ error }));
+});
+
+//Ajout :
+app.delete('/api/stuff/:id', (req, res) => {
+    Thing.deleteOne({_id: req.params.id})
+        .then(() => res.status(200).json({message: 'Objet supprimé !'}))
+        .catch(error => res.status(400).json({ error}))
+})
+
 app.get('/api/stuff/:id', (req, res) => { // ":" rend le segment dynamique de la route accessible en tant que paramètre
     Thing.findOne({_id: req.params.id}) //Trouve le thing dont l'id est le même que celui du paramètre de la requête
         .then(thing => res.status(200).json(thing))
