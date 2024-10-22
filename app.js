@@ -1,17 +1,17 @@
 const express = require('express');
 const app = express();
+const mongoose = require('mongoose');
 
 //Ajout :
-const mongoose = require('mongoose');
+const Thing = require('./models/Thing')
+
 mongoose.connect('mongodb+srv://ribeirosimon:W9SKchHjawMJWVc7@cluster0.yeur4.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0',
     { useNewUrlParser: true,
         useUnifiedTopology: true })
     .then(() => console.log('Connexion à MongoDB réussie !'))
     .catch(() => console.log('Connexion à MongoDB échouée !'));
 
-app.use(express.json()); //indique à Express d'intercepter toutes les requêtes qui ont comme Content-Type "application/json" 
-//et met à disposition leur body directement sur l'objet req 
-//Le package "body-parser" est une ancienne façon de faire équivalante (rendre les données du body de req exploitables)
+app.use(express.json());
 
 app.use((req, res, next) => { 
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -20,35 +20,27 @@ app.use((req, res, next) => {
     next();
 });
 
-app.post('/api/stuff', (req, res) => {
-    console.log(req.body); //Log le body de la requete (au content-type "application/json") dans la console (qui execute le server)
-    res.status(201).json({ //201 est le code de création de ressource
-        message: 'Objet créé !'
-    });
+app.post('/api/stuff', (req, res) => { //contenu modifié pour enregistrer les nouvelles ressources avec le model Thing
+    delete req.body._id; //Supprime l'id attribué par le front-end, Mongo en créant un automatiquement
+    const thing = new Thing({
+        ...req.body // Propage le body de la requête dans le nouvel objet thing
+    })
+    thing.save() // Enregistre thing dans la DB et renvoie une promise nécessitant un .then et un .catch
+        .then(() => res.status(201).json({ message: 'Objet enregistré !'})) //Dans tous les cas le renvoie d'une reponse est necessaire pour eviter l'expiration de la requête
+        .catch(error => res.status(400).json({ error })); //Recupère l'éventuelle erreur et la renvoie en reponse ({error} équivaut à {error: error})
 });
 
-app.use('/api/stuff', (req, res) => {//La méthode .use permet d'intercepter toutes les requêtes (non spécifique) à la route indiquée, 
-//on peut spécifier le verbe de requête à la place pour n'intercepter que celles-ci. 
-//Les requêtes interceptées pour une même route par un middleware en amout, ne le seront pas par celles qui aurait pu le faire en aval.
-    const stuff = [
-        {
-            _id: 'oeihFzeoi',
-            title: 'Mon premier objet',
-            description: 'Les infos de mon premier objet',
-            imageUrl: 'Https://cdn.pixabay.com/photo/2019/06/11/18/56/camera-4267692_1280.jpg',
-            price: 4900,
-            userID: 'qsomihvqios',
-        },
-        {
-            _id: 'oeihfzeomoihi',
-            title: 'Mon deuxième objet',
-            description: 'Les infos de mon deuxième objet',
-            imageUrl: 'https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.publicdomainpictures.net%2Fpictures%2F100000%2Fvelka%2Fnain-de-jardin-avec-ballon.jpg&f=1&nofb=1&ipt=729b7992b12273a960d8a0cb627cb7a22ab46c89be69bbc7d8196b97e9621870&ipo=images',
-            price: 2900,
-            userID: 'qsomihvqios'
-        },
-    ];
-    res.status(200).json(stuff);
+//Ajout :
+app.get('/api/stuff/:id', (req, res) => { // ":" rend le segment dynamique de la route accessible en tant que paramètre
+    Thing.findOne({_id: req.params.id}) //Trouve le thing dont l'id est le même que celui du paramètre de la requête
+        .then(thing => res.status(200).json(thing))
+        .catch(error => res.status(404).json({ error }));
+});
+
+app.use('/api/stuff', (req, res) => { //Contenu modifié pour récupérer tous les objets Thing de la DB plutôt que l'ancien tableau statique
+    Thing.find() //Sans objet de configuration pour obtenir la liste complètes
+        .then(things => res.status(200).json(things)) //Récupère et renvoie le tableau de tous les things de la DB
+        .catch(error => res.status(400).json({ error })); //Récupère et renvoie l'erreur
 });
 
 module.exports = app;
