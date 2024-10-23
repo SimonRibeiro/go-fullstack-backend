@@ -1,9 +1,9 @@
 const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
-const Thing = require('./models/Thing')
+const Product = require('./models/Product')
 
-mongoose.connect('mongodb+srv://ribeirosimon:W9SKchHjawMJWVc7@cluster0.yeur4.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0',
+mongoose.connect('mongodb+srv://ribeirosimon:L5kqFjhBtYsTFhnf@cluster0.0dgyu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0',
     { useNewUrlParser: true,
         useUnifiedTopology: true })
     .then(() => console.log('Connexion à MongoDB réussie !'))
@@ -18,40 +18,38 @@ app.use((req, res, next) => {
     next();
 });
 
-app.post('/api/stuff', (req, res) => { //contenu modifié pour enregistrer les nouvelles ressources avec le model Thing
-    delete req.body._id; //Supprime l'id attribué par le front-end, Mongo en créant un automatiquement
-    const thing = new Thing({
-        ...req.body // Propage le body de la requête dans le nouvel objet thing
-    })
-    thing.save() // Enregistre thing dans la DB et renvoie une promise nécessitant un .then et un .catch
-        .then(() => res.status(201).json({ message: 'Objet enregistré !'})) //Dans tous les cas le renvoie d'une reponse est necessaire pour eviter l'expiration de la requête
-        .catch(error => res.status(400).json({ error })); //Recupère l'éventuelle erreur et la renvoie en reponse ({error} équivaut à {error: error})
+app.get('/api/products', (req, res) => {
+    Product.find() //Sans objet de configuration pour obtenir la liste complètes
+        .then(Products => res.status(200).json({ products: Products[] })) //Récupère et renvoie le tableau de tous les Products de la DB
+        .catch(error => res.status(400).json({ error })); //Récupère et renvoie l'erreur
 });
 
-//Ajout :
-app.put('/api/stuff/:id', (req, res) => {
-    Thing.updateOne({_id: req.params.id}, {...req.body, _id:req.params.id})
-        .then(() => res.status(200).json({message: 'Objet mis à jour !'}))
-        .catch(error => res.status(400).json({ error }));
-});
-
-//Ajout :
-app.delete('/api/stuff/:id', (req, res) => {
-    Thing.deleteOne({_id: req.params.id})
-        .then(() => res.status(200).json({message: 'Objet supprimé !'}))
-        .catch(error => res.status(400).json({ error}))
-})
-
-app.get('/api/stuff/:id', (req, res) => { // ":" rend le segment dynamique de la route accessible en tant que paramètre
-    Thing.findOne({_id: req.params.id}) //Trouve le thing dont l'id est le même que celui du paramètre de la requête
-        .then(thing => res.status(200).json(thing))
+app.get('/api/products/:id', (req, res) => { // ":" rend le segment dynamique de la route accessible en tant que paramètre
+    Product.findOne({_id: req.params.id}) //Trouve le Product dont l'id est le même que celui du paramètre de la requête
+        .then(Product => res.status(200).json({ product: Product }))
         .catch(error => res.status(404).json({ error }));
 });
 
-app.use('/api/stuff', (req, res) => { //Contenu modifié pour récupérer tous les objets Thing de la DB plutôt que l'ancien tableau statique
-    Thing.find() //Sans objet de configuration pour obtenir la liste complètes
-        .then(things => res.status(200).json(things)) //Récupère et renvoie le tableau de tous les things de la DB
-        .catch(error => res.status(400).json({ error })); //Récupère et renvoie l'erreur
+app.post('/api/products', (req, res) => { //contenu modifié pour enregistrer les nouvelles ressources avec le model Product
+    delete req.body._id; //Supprime l'id attribué par le front-end, Mongoose en créant un automatiquement
+    const Product = new Product({
+        ...req.body // Propage le body de la requête dans le nouvel objet Product
+    })
+    Product.save() // Enregistre Product dans la DB et renvoie une promise nécessitant un .then et un .catch
+        .then(product => res.status(201).json({ product })) //Dans tous les cas le renvoie d'une reponse est necessaire pour eviter l'expiration de la requête
+        .catch(error => res.status(400).json({ error })); //Recupère l'éventuelle erreur et la renvoie en reponse ({error} équivaut à {error: error})
 });
+
+app.put('/api/products/:id', (req, res) => {
+    Product.updateOne({_id: req.params.id}, {...req.body, _id:req.params.id})
+        .then(() => res.status(200).json({message: 'Modified!'}))
+        .catch(error => res.status(400).json({ error }));
+});
+
+app.delete('/api/products/:id', (req, res) => {
+    Product.deleteOne({_id: req.params.id})
+        .then(() => res.status(200).json({message: 'Deleted!'}))
+        .catch(error => res.status(400).json({ error}))
+})
 
 module.exports = app;
