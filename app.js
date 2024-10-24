@@ -20,7 +20,7 @@ app.use((req, res, next) => {
 
 app.get('/api/products', (req, res) => {
     Product.find() //Sans objet de configuration pour obtenir la liste complètes
-        .then(Products => res.status(200).json({ products: Products[] })) //Récupère et renvoie le tableau de tous les Products de la DB
+        .then(Products => res.status(200).json({ products: Products })) //Récupère et renvoie le tableau de tous les Products de la DB
         .catch(error => res.status(400).json({ error })); //Récupère et renvoie l'erreur
 });
 
@@ -32,10 +32,10 @@ app.get('/api/products/:id', (req, res) => { // ":" rend le segment dynamique de
 
 app.post('/api/products', (req, res) => { //contenu modifié pour enregistrer les nouvelles ressources avec le model Product
     delete req.body._id; //Supprime l'id attribué par le front-end, Mongoose en créant un automatiquement
-    const Product = new Product({
+    const product = new Product({
         ...req.body // Propage le body de la requête dans le nouvel objet Product
     })
-    Product.save() // Enregistre Product dans la DB et renvoie une promise nécessitant un .then et un .catch
+    product.save() // Enregistre Product dans la DB et renvoie une promise nécessitant un .then et un .catch
         .then(product => res.status(201).json({ product })) //Dans tous les cas le renvoie d'une reponse est necessaire pour eviter l'expiration de la requête
         .catch(error => res.status(400).json({ error })); //Recupère l'éventuelle erreur et la renvoie en reponse ({error} équivaut à {error: error})
 });
