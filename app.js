@@ -3,7 +3,7 @@ const app = express();
 const mongoose = require('mongoose');
 const Product = require('./models/Product')
 
-mongoose.connect('mongodb+srv://ribeirosimon:L5kqFjhBtYsTFhnf@cluster0.0dgyu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0',
+mongoose.connect('mongodb+srv://ribeirosimon:<PASSWORD>@cluster0.0dgyu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0',
     { useNewUrlParser: true,
         useUnifiedTopology: true })
     .then(() => console.log('Connexion à MongoDB réussie !'))
