@@ -31,7 +31,7 @@ exports.login = (req, res) => {
                                 userId: user._id,
                                 token: jwt.sign(
                                     {userId: user._id},
-                                    'RAMDOM_SECRET_KEY',
+                                    'RANDOM_SECRET_KEY',
                                     {expiresIn: '24h'}
                                 )
                             });
