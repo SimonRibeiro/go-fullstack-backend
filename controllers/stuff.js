@@ -1,19 +1,39 @@
 const Thing = require('../models/Thing')
 
-exports.createThing = (req, res) => { //contenu modifié pour enregistrer les nouvelles ressources avec le model Thing
-    delete req.body._id; //Supprime l'id attribué par le front-end, Mongo en créant un automatiquement
+exports.createThing = (req, res) => { 
+    const thingObject = JSON.parse(req.body.thing); //Rend le Thing utlisable en le convertisant de form-data(à cause de la présence du fichier) en JSON
+    delete thingObject._id; //Modifié avec thingObject. Supprime toujours l'id attribué par le front-end, Mongo en créant un automatiquement
+    delete thingObject._userId; //Supprimé pour utiliser celui extrait du Token pour plus de sécurité
     const thing = new Thing({
-        ...req.body // Propage le body de la requête dans le nouvel objet thing
-    })
-    thing.save() // Enregistre thing dans la DB et renvoie une promise nécessitant un .then et un .catch
-        .then(() => res.status(201).json({ message: 'Objet enregistré !'})) //Dans tous les cas le renvoie d'une reponse est necessaire pour eviter l'expiration de la requête
-        .catch(error => res.status(400).json({ error })); //Recupère l'éventuelle erreur et la renvoie en reponse ({error} équivaut à {error: error})
+        ...thingObject, //Modfié avec thingObject
+        userId : req.auth.userId, //Extrait l'Id du Token
+        imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}` //Résout l'URL complète de l'image avec son protocol, hote, répertoire et nom
+    });
+    thing.save()
+        .then(() => res.status(201).json({message: 'Objet enregistré !'}))
+        .catch(error => res.status(400).json({ error }));
 };
 
 exports.modifyThing = (req, res) => {
-    Thing.updateOne({_id: req.params.id}, {...req.body, _id:req.params.id})
-        .then(() => res.status(200).json({message: 'Objet mis à jour !'}))
-        .catch(error => res.status(400).json({ error }));
+    const thingObject = req.file ? { //Regarde si la req comporte un fichier
+        ...JSON.parse(req.body.thing), //Si oui le rend exploitable...
+        imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}` //...et résout son URL
+    } : {...req.body}; //Sinon traite simplement l'objet entrant comme auparavant
+
+    delete thingObject._userId; //Supprimé pour utiliser celui extrait du Token pour plus de sécurité
+    Thing.findOne({_id: req.params.id}) //Cherche l'objet avant de le modifier pour pouvoir vérifier qu'il appartient à l'emetteur de la req
+        .then((thing) => { //Si trouvé, le récupère
+            if (thing.userId != req.auth.userId) { //Si le req n'émane pas du propriétaire du fichier
+                res.status(401).json({message: 'Not authorized'}); //Accès refusé
+            } else { //Sinon exécution du code d'origine
+                Thing.updateOne({_id: req.params.id}, {...thingObject, _id: req.params.id}) //Modifié avec thingObject
+                    .then(() => res.status(200).json({message: 'Objet mis à jour !'}))
+                    .catch(error => res.status(400).json({ error }));
+            }  
+        })
+        .catch((error) => {
+            res.status(404).json({ error });
+        });
 };
 
 exports.deleteThing = (req, res) => {
@@ -22,14 +42,14 @@ exports.deleteThing = (req, res) => {
         .catch(error => res.status(400).json({ error }));
 };
 
-exports.getOneThing = (req, res) => { // ":" rend le segment dynamique de la route accessible en tant que paramètre
-    Thing.findOne({_id: req.params.id}) //Trouve le thing dont l'id est le même que celui du paramètre de la requête
+exports.getOneThing = (req, res) => {
+    Thing.findOne({_id: req.params.id})
         .then(thing => res.status(200).json(thing))
         .catch(error => res.status(404).json({ error }));
 };
 
-exports.getAllThings = (req, res) => { //Contenu modifié pour récupérer tous les objets Thing de la DB plutôt que l'ancien tableau statique
-    Thing.find() //Sans objet de configuration pour obtenir la liste complètes
-        .then(things => res.status(200).json(things)) //Récupère et renvoie le tableau de tous les things de la DB
-        .catch(error => res.status(400).json({ error })); //Récupère et renvoie l'erreur
+exports.getAllThings = (req, res) => {
+    Thing.find()
+        .then(things => res.status(200).json(things))
+        .catch(error => res.status(400).json({ error }));
 };
