@@ -1,10 +1,11 @@
 const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
+const path = require('path');
 const stuffRoutes = require('./routes/stuff')
 const userRoutes = require('./routes/user')
 
-mongoose.connect('mongodb+srv://ribeirosimon:W9SKchHjawMJWVc7@cluster0.yeur4.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0',
+mongoose.connect('mongodb+srv://ribeirosimon:<PASSWORD>@cluster0.yeur4.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0',
     { useNewUrlParser: true,
         useUnifiedTopology: true })
     .then(() => console.log('Connexion à MongoDB réussie !'))
@@ -21,5 +22,6 @@ app.use((req, res, next) => {
 
 app.use('/api/stuff', stuffRoutes);
 app.use('/api/auth', userRoutes);
+app.use('/images', express.static(path.join(__dirname, 'images')));
 
 module.exports = app;
