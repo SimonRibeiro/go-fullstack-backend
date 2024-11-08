@@ -1,4 +1,5 @@
 const Thing = require('../models/Thing')
+const fs = require('fs');
 
 exports.createThing = (req, res) => { 
     const thingObject = JSON.parse(req.body.thing); //Rend le Thing utlisable en le convertisant de form-data(à cause de la présence du fichier) en JSON
@@ -37,9 +38,20 @@ exports.modifyThing = (req, res) => {
 };
 
 exports.deleteThing = (req, res) => {
-    Thing.deleteOne({_id: req.params.id})
-        .then(() => res.status(200).json({message: 'Objet supprimé !'}))
-        .catch(error => res.status(400).json({ error }));
+    Thing.findOne({_id: req.params.id}) //Utilise l'ID reçue comme paramètre pour accéder au Thing correspondant dans la DB
+        .then(thing => { //Si trouvé
+            if (thing.userId != req.auth.userId) { //Vérifie si l’utilisateur qui a fait la requête de suppression est bien celui qui a créé le Thing
+                res.status(401).json({message: 'Not authorized'}); //Si non : accès refusé
+            } else { //Si oui
+                const filename = thing.imageUrl.split('/images/')[1]; //Sépare le segment du dossier de celui du nom de fichier et le récupère
+                fs.unlink(`images/${filename}`, () => { //Fonction de suppretion de fs avec en callback la fonction déjà utilisée auparvant
+                    Thing.deleteOne({_id: req.params.id})
+                    .then(() => res.status(200).json({message: 'Objet supprimé !'}))
+                    .catch(error => res.status(400).json({ error }));
+                })
+            }
+        })
+        .catch(error => res.status(500).json({ error })); //Erreur server
 };
 
 exports.getOneThing = (req, res) => {
